@@ -13,6 +13,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Lozinka", type: "password" },
+        rememberMe: { label: "Zapamti me", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
@@ -30,13 +31,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          rememberMe: credentials.rememberMe === "true",
         };
       },
     }),
   ],
   callbacks: {
     jwt({ token, user }) {
-      if (user) token.role = (user as { role: Role }).role;
+      if (user) {
+        token.role = (user as { role: Role }).role;
+        const rememberMe = (user as { rememberMe?: boolean }).rememberMe ?? false;
+        token.exp = Math.floor(Date.now() / 1000) + (rememberMe ? 30 * 24 * 60 * 60 : 8 * 60 * 60);
+      }
       return token;
     },
     session({ session, token }) {
@@ -49,5 +55,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // cookie lives 30 days max; token.exp controls actual expiry
   },
 });

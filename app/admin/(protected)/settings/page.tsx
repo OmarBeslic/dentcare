@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -98,7 +99,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Lozinka *</Label>
-                    <Input type="password" value={newUser.password} onChange={(e) => setNewUser((u) => ({ ...u, password: e.target.value }))} placeholder="Min. 6 karaktera" />
+                    <PasswordInput value={newUser.password} onChange={(e) => setNewUser((u) => ({ ...u, password: e.target.value }))} placeholder="Min. 6 karaktera" />
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
                   <div className="space-y-2">
