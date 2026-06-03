@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  DENTIST
+  ASSISTANT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(ASSISTANT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments   Appointment[]
+  createdRecords PatientRecord[] @relation("CreatedBy")
+  workingHours   WorkingHours[]
+}
+
+model WorkingHours {
+  id        String  @id @default(cuid())
+  userId    String
+  dayOfWeek Int     // 0=Sunday, 1=Monday … 6=Saturday
+  isActive  Boolean @default(true)
+  startTime String  @default("08:00") // HH:mm
+  endTime   String  @default("16:00") // HH:mm
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek])
+}
+
+model Patient {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime
+  jmbg        String   @unique
+  phone       String
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+  records      PatientRecord[]
+}
+
+model PatientRecord {
+  id          String  @id @default(cuid())
+  patientId   String
+  createdById String
+
+  diagnosis    String?
+  treatment    String?
+  prescription String?
+  notes        String?
+  toothChart   Json?
+  attachments  String[]
+
+  visitDate DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("CreatedBy", fields: [createdById], references: [id])
+}
+
+model Appointment {
+  id        String @id @default(cuid())
+  patientId String
+  dentistId String
+
+  startTime DateTime
+  endTime   DateTime
+  duration  Int
+
+  status AppointmentStatus @default(SCHEDULED)
+  type   String?
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  dentist User    @relation(fields: [dentistId], references: [id])
+}
