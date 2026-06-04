@@ -4,25 +4,13 @@ import { Header } from "@/components/admin/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, TrendingUp, XCircle, Clock, ChevronRight, Globe, UserCheck } from "lucide-react";
+import { Calendar, Users, TrendingUp, XCircle, Clock, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { formatTime, formatDate } from "@/lib/utils";
+import { formatTime } from "@/lib/utils";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
-import type { AppointmentStatus } from "@prisma/client";
-
-const statusLabel: Record<AppointmentStatus, string> = {
-  SCHEDULED: "Zakazano",
-  COMPLETED: "Završeno",
-  CANCELLED: "Otkazano",
-  NO_SHOW: "Nije došao",
-};
-
-const statusVariant: Record<AppointmentStatus, "teal" | "success" | "destructive" | "warning"> = {
-  SCHEDULED: "teal",
-  COMPLETED: "success",
-  CANCELLED: "destructive",
-  NO_SHOW: "warning",
-};
+import { statusLabel, statusVariant } from "@/lib/appointment-constants";
+import { BookedByBadge } from "@/components/admin/BookedByBadge";
+import { EmptyState } from "@/components/admin/EmptyState";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -105,10 +93,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {todayAppointments.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <Clock className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                <p className="text-sm">Nema zakazanih termina za danas.</p>
-              </div>
+              <EmptyState icon={Clock} message="Nema zakazanih termina za danas." />
             ) : (
               <div className="space-y-3">
                 {todayAppointments.map((apt) => (
@@ -130,15 +115,9 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      {apt.bookedBy ? (
-                        <span className="hidden sm:inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium">
-                          <UserCheck className="w-3 h-3" />{apt.bookedBy.name.split(" ")[0]}
-                        </span>
-                      ) : (
-                        <span className="hidden sm:inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
-                          <Globe className="w-3 h-3" />Online
-                        </span>
-                      )}
+                      <span className="hidden sm:inline-flex">
+                        <BookedByBadge bookedBy={apt.bookedBy} />
+                      </span>
                       <Badge variant={statusVariant[apt.status]}>
                         {statusLabel[apt.status]}
                       </Badge>

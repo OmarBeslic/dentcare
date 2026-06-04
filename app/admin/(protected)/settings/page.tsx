@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { Header } from "@/components/admin/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,15 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Loader2, Trash2, Users, Clock } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { Role } from "@prisma/client";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useUsers, useCreateUser, useDeleteUser } from "@/hooks/useUsers";
 import { WorkingHoursEditor } from "@/components/admin/WorkingHoursEditor";
 
@@ -34,6 +30,7 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "DENTIST" as Role });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -46,6 +43,8 @@ export default function SettingsPage() {
   const { data: users = [], isPending } = useUsers();
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
+
+  const userToDelete = users.find((u) => u.id === deleteId);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +66,11 @@ export default function SettingsPage() {
         }
       },
     });
+  }
+
+  function handleDeleteConfirm() {
+    if (!deleteId) return;
+    deleteUser.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
   }
 
   if (!session) return null;
@@ -151,23 +155,14 @@ export default function SettingsPage() {
                       <TableCell className="text-muted-foreground">{formatDate(u.createdAt)}</TableCell>
                       <TableCell>
                         {u.id !== session.user.id && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-red-50">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Obriši korisnika?</AlertDialogTitle>
-                                <AlertDialogDescription>Ova akcija je nepovratna. Korisnik {u.name} će biti obrisan.</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Otkaži</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteUser.mutate(u.id)}>Obriši</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-red-50"
+                            onClick={() => setDeleteId(u.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -175,6 +170,7 @@ export default function SettingsPage() {
                 </TableBody>
               </Table>
             </div>
+
             {/* Mobile cards */}
             <div className="block md:hidden space-y-3">
               {isPending ? (
@@ -187,7 +183,12 @@ export default function SettingsPage() {
                     <Badge variant={roleBadgeVariant[u.role]} className="mt-1">{roleLabel[u.role]}</Badge>
                   </div>
                   {u.id !== session.user.id && (
-                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteUser.mutate(u.id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() => setDeleteId(u.id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
@@ -196,24 +197,33 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
-      {/* Working hours */}
-      {(() => {
-        const dentistOptions = users.filter((u) => ["ADMIN", "DENTIST"].includes(u.role));
-        if (dentistOptions.length === 0) return null;
-        return (
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="w-4 h-4" /> Radno vrijeme
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <WorkingHoursEditor dentists={dentistOptions} />
-            </CardContent>
-          </Card>
-        );
-      })()}
+
+        {(() => {
+          const dentistOptions = users.filter((u) => ["ADMIN", "DENTIST"].includes(u.role));
+          if (dentistOptions.length === 0) return null;
+          return (
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> Radno vrijeme
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <WorkingHoursEditor dentists={dentistOptions} />
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        title="Obriši korisnika?"
+        description={`Ova akcija je nepovratna. Korisnik ${userToDelete?.name ?? ""} će biti obrisan.`}
+        confirmLabel="Obriši"
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }

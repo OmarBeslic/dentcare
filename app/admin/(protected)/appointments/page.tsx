@@ -8,33 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Calendar, Clock, Check, X, Globe, UserCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 import { formatTime } from "@/lib/utils";
 import { format } from "date-fns";
-import type { AppointmentWithRelations, AppointmentStatus } from "@/types";
+import { statusLabel, statusVariant } from "@/lib/appointment-constants";
+import { BookedByBadge } from "@/components/admin/BookedByBadge";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { PaginationBar } from "@/components/admin/PaginationBar";
+import { AppointmentStatusActions } from "@/components/admin/AppointmentStatusActions";
+import type { AppointmentWithRelations } from "@/types";
 import { useAppointments, useUpdateAppointmentStatus, APPOINTMENTS_PAGE_SIZE } from "@/hooks/useAppointments";
 import { useUsers } from "@/hooks/useUsers";
-
-const statusLabel: Record<AppointmentStatus, string> = {
-  SCHEDULED: "Zakazano",
-  COMPLETED: "Završeno",
-  CANCELLED: "Otkazano",
-  NO_SHOW: "Nije došao",
-};
-
-const statusVariant: Record<AppointmentStatus, "teal" | "success" | "destructive" | "warning"> = {
-  SCHEDULED: "teal",
-  COMPLETED: "success",
-  CANCELLED: "destructive",
-  NO_SHOW: "warning",
-};
 
 export default function AppointmentsPage() {
   const { data: session } = useSession();
@@ -101,8 +88,7 @@ export default function AppointmentsPage() {
           </div>
           <Button asChild>
             <Link href="/admin/appointments/new">
-              <Plus className="w-4 h-4" />
-              Novi termin
+              <Plus className="w-4 h-4" /> Novi termin
             </Link>
           </Button>
         </div>
@@ -138,9 +124,8 @@ export default function AppointmentsPage() {
                   ))
                 ) : appointments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
-                      <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      <p className="text-sm">Nema termina za izabrani datum.</p>
+                    <TableCell colSpan={8}>
+                      <EmptyState icon={Calendar} message="Nema termina za izabrani datum." />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -159,60 +144,14 @@ export default function AppointmentsPage() {
                         <Badge variant={statusVariant[apt.status]}>{statusLabel[apt.status]}</Badge>
                       </TableCell>
                       <TableCell>
-                        {apt.bookedBy ? (
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium">
-                            <UserCheck className="w-3 h-3" />{apt.bookedBy.name.split(" ")[0]}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
-                            <Globe className="w-3 h-3" />Online
-                          </span>
-                        )}
+                        <BookedByBadge bookedBy={apt.bookedBy} />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-end gap-1">
-                          {apt.status === "SCHEDULED" && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-success hover:text-success hover:bg-green-50"
-                                onClick={() => updateStatus.mutate({ id: apt.id, status: "COMPLETED" })}
-                                title="Završi"
-                              >
-                                <Check className="w-4 h-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-red-50"
-                                    title="Otkaži"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Otkaži termin?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Jeste li sigurni da želite da otkažete ovaj termin?
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Nazad</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => updateStatus.mutate({ id: apt.id, status: "CANCELLED" })}
-                                    >
-                                      Otkaži termin
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </>
-                          )}
-                        </div>
+                        <AppointmentStatusActions
+                          status={apt.status}
+                          onComplete={() => updateStatus.mutate({ id: apt.id, status: "COMPLETED" })}
+                          onCancel={() => updateStatus.mutate({ id: apt.id, status: "CANCELLED" })}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
@@ -229,10 +168,7 @@ export default function AppointmentsPage() {
               <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
             ))
           ) : appointments.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Nema termina za izabrani datum.</p>
-            </div>
+            <EmptyState icon={Calendar} message="Nema termina za izabrani datum." />
           ) : (
             appointments.map((apt) => (
               <Card key={apt.id}>
@@ -247,39 +183,17 @@ export default function AppointmentsPage() {
                       <p className="font-medium">{apt.patient.firstName} {apt.patient.lastName}</p>
                       <p className="text-sm text-muted-foreground">{apt.type ?? "Opšti pregled"} · {apt.dentist.name}</p>
                       <div className="mt-1">
-                        {apt.bookedBy ? (
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium">
-                            <UserCheck className="w-3 h-3" />{apt.bookedBy.name.split(" ")[0]}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
-                            <Globe className="w-3 h-3" />Online
-                          </span>
-                        )}
+                        <BookedByBadge bookedBy={apt.bookedBy} />
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <Badge variant={statusVariant[apt.status]}>{statusLabel[apt.status]}</Badge>
-                      {apt.status === "SCHEDULED" && (
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2 text-success border-success/30"
-                            onClick={() => updateStatus.mutate({ id: apt.id, status: "COMPLETED" })}
-                          >
-                            <Check className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2 text-destructive border-destructive/30"
-                            onClick={() => updateStatus.mutate({ id: apt.id, status: "CANCELLED" })}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      )}
+                      <AppointmentStatusActions
+                        status={apt.status}
+                        onComplete={() => updateStatus.mutate({ id: apt.id, status: "COMPLETED" })}
+                        onCancel={() => updateStatus.mutate({ id: apt.id, status: "CANCELLED" })}
+                        variant="card"
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -288,32 +202,13 @@ export default function AppointmentsPage() {
           )}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">
-              Stranica {page} od {totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1 || isPending}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Prethodna
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === totalPages || isPending}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Sljedeća <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          isPending={isPending}
+          onPrev={() => setPage((p) => p - 1)}
+          onNext={() => setPage((p) => p + 1)}
+        />
       </div>
     </div>
   );

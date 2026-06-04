@@ -9,12 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useUpdatePatient, useDeletePatient } from "@/hooks/usePatients";
 import type { Patient } from "@/types";
 
@@ -64,12 +61,16 @@ export function PatientActions({ patient }: Props) {
         <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
           <Pencil className="w-4 h-4" /> Uredi
         </Button>
-        <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-red-50 hover:text-destructive" onClick={() => setDeleteOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-destructive border-destructive/30 hover:bg-red-50 hover:text-destructive"
+          onClick={() => setDeleteOpen(true)}
+        >
           <Trash2 className="w-4 h-4" /> Obriši
         </Button>
       </div>
 
-      {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -112,23 +113,14 @@ export function PatientActions({ patient }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Obriši pacijenta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Ova akcija je nepovratna. Svi termini i kartoni pacijenta {patient.firstName} {patient.lastName} će biti obrisani.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Otkaži</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={remove.isPending}>
-              {remove.isPending ? "Brisanje..." : "Obriši"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Obriši pacijenta?"
+        description={`Ova akcija je nepovratna. Svi termini i kartoni pacijenta ${patient.firstName} ${patient.lastName} će biti obrisani.`}
+        confirmLabel="Obriši"
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

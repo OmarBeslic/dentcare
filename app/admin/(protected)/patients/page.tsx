@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users, ChevronRight, ChevronLeft } from "lucide-react";
+import { Plus, Search, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { PaginationBar } from "@/components/admin/PaginationBar";
 import { usePatients, PATIENTS_PAGE_SIZE } from "@/hooks/usePatients";
 import type { Patient } from "@/types";
 
@@ -87,11 +89,8 @@ export default function PatientsPage() {
                   ))
                 ) : patients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                      <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      <p className="text-sm">
-                        {search ? "Nema rezultata pretrage." : "Nema pacijenata."}
-                      </p>
+                    <TableCell colSpan={7}>
+                      <EmptyState icon={Users} message={search ? "Nema rezultata pretrage." : "Nema pacijenata."} />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -129,10 +128,7 @@ export default function PatientsPage() {
               <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
             ))
           ) : patients.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">{search ? "Nema rezultata." : "Nema pacijenata."}</p>
-            </div>
+            <EmptyState icon={Users} message={search ? "Nema rezultata." : "Nema pacijenata."} />
           ) : (
             patients.map((p) => (
               <Link key={p.id} href={`/admin/patients/${p.id}`}>
@@ -155,32 +151,13 @@ export default function PatientsPage() {
           )}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">
-              Stranica {page} od {totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1 || isPending}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Prethodna
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === totalPages || isPending}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Sljedeća <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          isPending={isPending}
+          onPrev={() => setPage((p) => p - 1)}
+          onNext={() => setPage((p) => p + 1)}
+        />
       </div>
     </div>
   );

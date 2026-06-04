@@ -3,21 +3,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Header } from "@/components/admin/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Plus, Phone, Calendar, FileText, Clock } from "lucide-react";
+import { ArrowLeft, Plus, Phone, Calendar, FileText } from "lucide-react";
 import Link from "next/link";
-import { formatDate, formatTime } from "@/lib/utils";
-import type { AppointmentStatus } from "@prisma/client";
+import { formatDate } from "@/lib/utils";
 import { PatientActions } from "@/components/admin/PatientActions";
-
-const statusLabel: Record<AppointmentStatus, string> = {
-  SCHEDULED: "Zakazano", COMPLETED: "Završeno", CANCELLED: "Otkazano", NO_SHOW: "Nije došao",
-};
-const statusVariant: Record<AppointmentStatus, "teal" | "success" | "destructive" | "warning"> = {
-  SCHEDULED: "teal", COMPLETED: "success", CANCELLED: "destructive", NO_SHOW: "warning",
-};
+import { PatientRecordsList } from "@/components/admin/PatientRecordsList";
+import { PatientAppointmentHistory } from "@/components/admin/PatientAppointmentHistory";
 
 export default async function PatientDetailPage({
   params,
@@ -75,7 +68,9 @@ export default async function PatientDetailPage({
                 <div>
                   <p className="text-xs text-muted-foreground">Datum rodjenja</p>
                   <p className="font-medium">{formatDate(patient.dateOfBirth)}</p>
-                  <p className="text-xs text-muted-foreground">{Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))} godina</p>
+                  <p className="text-xs text-muted-foreground">
+                    {Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))} godina
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">JMBG</p>
@@ -125,30 +120,7 @@ export default async function PatientDetailPage({
               </Button>
             </CardHeader>
             <CardContent>
-              {patient.records.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Nema kartona.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {patient.records.map((r) => (
-                    <Link key={r.id} href={`/admin/patients/${id}/records/${r.id}/edit`}>
-                      <div className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium">{formatDate(r.visitDate)}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                              {r.diagnosis ?? "Bez dijagnoze"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Dr. {r.createdBy.name}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+              <PatientRecordsList records={patient.records} patientId={id} />
             </CardContent>
           </Card>
 
@@ -160,29 +132,7 @@ export default async function PatientDetailPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {patient.appointments.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Nema termina.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {patient.appointments.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                      <div className="flex items-center gap-3">
-                        <div className="text-sm font-semibold text-primary w-24 flex-shrink-0">
-                          {formatDate(a.startTime)} {formatTime(a.startTime)}
-                        </div>
-                        <div>
-                          <p className="text-sm">{a.type ?? "Opšti pregled"}</p>
-                          <p className="text-xs text-muted-foreground">{a.dentist.name} · {a.duration} min</p>
-                        </div>
-                      </div>
-                      <Badge variant={statusVariant[a.status]}>{statusLabel[a.status]}</Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <PatientAppointmentHistory appointments={patient.appointments} />
             </CardContent>
           </Card>
         </div>
