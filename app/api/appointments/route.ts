@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
       include: {
         patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
         dentist: { select: { id: true, name: true, email: true } },
+        bookedBy: { select: { id: true, name: true } },
       },
       orderBy: { startTime: "asc" },
       skip: (page - 1) * limit,
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
     data: {
       patientId,
       dentistId,
+      bookedById: session.user.id,
       startTime: start,
       endTime: end,
       duration,
@@ -89,6 +91,7 @@ export async function POST(req: NextRequest) {
     include: {
       patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
       dentist: { select: { id: true, name: true, email: true } },
+      bookedBy: { select: { id: true, name: true } },
     },
   });
 

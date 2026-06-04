@@ -14,12 +14,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Calendar, Clock, Check, X } from "lucide-react";
+import { Plus, Calendar, Clock, Check, X, Globe, UserCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { formatTime } from "@/lib/utils";
 import { format } from "date-fns";
 import type { AppointmentWithRelations, AppointmentStatus } from "@/types";
-import { useAppointments, useUpdateAppointmentStatus } from "@/hooks/useAppointments";
+import { useAppointments, useUpdateAppointmentStatus, APPOINTMENTS_PAGE_SIZE } from "@/hooks/useAppointments";
 import { useUsers } from "@/hooks/useUsers";
 
 const statusLabel: Record<AppointmentStatus, string> = {
@@ -41,16 +41,24 @@ export default function AppointmentsPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [status, setStatus] = useState("ALL");
   const [dentistId, setDentistId] = useState("ALL");
+  const [page, setPage] = useState(1);
 
   const { data: usersData } = useUsers();
   const dentists = (usersData ?? []).filter((u) =>
     ["ADMIN", "DENTIST"].includes(u.role)
   );
 
-  const { data, isPending } = useAppointments({ date, status, dentistId });
+  const { data, isPending } = useAppointments({ date, status, dentistId, page });
   const appointments: AppointmentWithRelations[] = data?.appointments ?? [];
+  const total: number = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / APPOINTMENTS_PAGE_SIZE));
 
   const updateStatus = useUpdateAppointmentStatus();
+
+  function handleFilterChange(fn: () => void) {
+    fn();
+    setPage(1);
+  }
 
   if (!session) return null;
 
@@ -64,10 +72,10 @@ export default function AppointmentsPage() {
             <Input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => handleFilterChange(() => setDate(e.target.value))}
               className="w-full sm:w-44"
             />
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={(v) => handleFilterChange(() => setStatus(v))}>
               <SelectTrigger className="w-full sm:w-44">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -79,7 +87,7 @@ export default function AppointmentsPage() {
                 <SelectItem value="NO_SHOW">Nije došao</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={dentistId} onValueChange={setDentistId}>
+            <Select value={dentistId} onValueChange={(v) => handleFilterChange(() => setDentistId(v))}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Doktor" />
               </SelectTrigger>
@@ -99,6 +107,10 @@ export default function AppointmentsPage() {
           </Button>
         </div>
 
+        <p className="text-sm text-muted-foreground">
+          {isPending ? "Učitavanje..." : `${total} termin${total === 1 ? "" : "a"}`}
+        </p>
+
         {/* Table — desktop */}
         <div className="hidden md:block">
           <Card>
@@ -111,6 +123,7 @@ export default function AppointmentsPage() {
                   <TableHead>Tip</TableHead>
                   <TableHead>Doktor</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Zakazao</TableHead>
                   <TableHead className="text-right">Akcije</TableHead>
                 </TableRow>
               </TableHeader>
@@ -118,14 +131,14 @@ export default function AppointmentsPage() {
                 {isPending ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : appointments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                       <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
                       <p className="text-sm">Nema termina za izabrani datum.</p>
                     </TableCell>
@@ -144,6 +157,17 @@ export default function AppointmentsPage() {
                       <TableCell>{apt.dentist.name}</TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[apt.status]}>{statusLabel[apt.status]}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {apt.bookedBy ? (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium">
+                            <UserCheck className="w-3 h-3" />{apt.bookedBy.name.split(" ")[0]}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                            <Globe className="w-3 h-3" />Online
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
@@ -222,6 +246,17 @@ export default function AppointmentsPage() {
                       </div>
                       <p className="font-medium">{apt.patient.firstName} {apt.patient.lastName}</p>
                       <p className="text-sm text-muted-foreground">{apt.type ?? "Opšti pregled"} · {apt.dentist.name}</p>
+                      <div className="mt-1">
+                        {apt.bookedBy ? (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium">
+                            <UserCheck className="w-3 h-3" />{apt.bookedBy.name.split(" ")[0]}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                            <Globe className="w-3 h-3" />Online
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <Badge variant={statusVariant[apt.status]}>{statusLabel[apt.status]}</Badge>
@@ -252,6 +287,33 @@ export default function AppointmentsPage() {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">
+              Stranica {page} od {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 1 || isPending}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" /> Prethodna
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === totalPages || isPending}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sljedeća <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -7,6 +7,6 @@ export default defineConfig({
     seed: "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
   },
   datasource: {
-    url: process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/dentcare",
+    url: process.env.DATABASE_URL ?? "postgresql://postgres:casino1@localhost:5433/dentcare",
   },
 });

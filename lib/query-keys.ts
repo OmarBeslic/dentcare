@@ -7,7 +7,7 @@ export const queryKeys = {
   },
   patients: {
     all: ["patients"] as const,
-    list: (search: string) => ["patients", "list", search] as const,
+    list: (params: object) => ["patients", "list", params] as const,
     detail: (id: string) => ["patients", "detail", id] as const,
     records: (patientId: string) => ["patients", "records", patientId] as const,
     record: (patientId: string, recordId: string) =>

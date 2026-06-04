@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users, ChevronRight } from "lucide-react";
+import { Plus, Search, Users, ChevronRight, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { usePatients } from "@/hooks/usePatients";
+import { usePatients, PATIENTS_PAGE_SIZE } from "@/hooks/usePatients";
 import type { Patient } from "@/types";
 
 type PatientWithStats = Patient & {
@@ -22,10 +22,17 @@ type PatientWithStats = Patient & {
 export default function PatientsPage() {
   const { data: session } = useSession();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isPending } = usePatients(search);
+  const { data, isPending } = usePatients(search, page);
   const patients: PatientWithStats[] = data?.patients ?? [];
   const total: number = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PATIENTS_PAGE_SIZE));
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    setPage(1);
+  }
 
   if (!session) return null;
 
@@ -39,7 +46,7 @@ export default function PatientsPage() {
             <Input
               placeholder="Pretraži po imenu, JMBG ili telefonu..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -147,6 +154,33 @@ export default function PatientsPage() {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">
+              Stranica {page} od {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 1 || isPending}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" /> Prethodna
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === totalPages || isPending}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Sljedeća <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

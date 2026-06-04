@@ -34,6 +34,7 @@ export function generateSlots(
   const { hour: startH, min: startM } = parseHHmm(workingDay.startTime);
   const { hour: endH, min: endM } = parseHHmm(workingDay.endTime);
 
+  const now = new Date();
   const dayEnd = setMinutes(setHours(new Date(date), endH), endM);
   const slots: Slot[] = [];
 
@@ -46,6 +47,7 @@ export function generateSlots(
     // Skip slot if appointment would run past end of working day
     if (slotEnd > dayEnd) break;
 
+    const isPast = cursor < now;
     const conflict = appointments.some(
       (a) =>
         (cursor >= a.startTime && cursor < a.endTime) ||
@@ -55,7 +57,7 @@ export function generateSlots(
 
     slots.push({
       time: `${String(cursor.getHours()).padStart(2, "0")}:${String(cursor.getMinutes()).padStart(2, "0")}`,
-      available: !conflict,
+      available: !conflict && !isPast,
       startTime: cursor.toISOString(),
     });
 

@@ -10,6 +10,7 @@ import { ArrowLeft, Plus, Phone, Calendar, FileText, Clock } from "lucide-react"
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/utils";
 import type { AppointmentStatus } from "@prisma/client";
+import { PatientActions } from "@/components/admin/PatientActions";
 
 const statusLabel: Record<AppointmentStatus, string> = {
   SCHEDULED: "Zakazano", COMPLETED: "Završeno", CANCELLED: "Otkazano", NO_SHOW: "Nije došao",
@@ -59,6 +60,7 @@ export default async function PatientDetailPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <CardTitle className="text-base">Informacije o pacijentu</CardTitle>
+              <PatientActions patient={patient} />
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -73,6 +75,7 @@ export default async function PatientDetailPage({
                 <div>
                   <p className="text-xs text-muted-foreground">Datum rodjenja</p>
                   <p className="font-medium">{formatDate(patient.dateOfBirth)}</p>
+                  <p className="text-xs text-muted-foreground">{Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))} godina</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">JMBG</p>
@@ -100,7 +103,7 @@ export default async function PatientDetailPage({
               )}
               <Separator />
               <div className="flex gap-3">
-                <Button asChild size="sm">
+                <Button asChild size="sm" variant="outline">
                   <Link href={`/admin/appointments/new?patientId=${patient.id}`}>
                     <Plus className="w-4 h-4" /> Novi termin
                   </Link>

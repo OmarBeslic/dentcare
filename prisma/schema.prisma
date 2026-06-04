@@ -28,9 +28,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  appointments   Appointment[]
-  createdRecords PatientRecord[] @relation("CreatedBy")
-  workingHours   WorkingHours[]
+  appointments        Appointment[]  @relation("DentistAppointments")
+  bookedAppointments  Appointment[]  @relation("BookedBy")
+  createdRecords      PatientRecord[] @relation("CreatedBy")
+  workingHours        WorkingHours[]
 }
 
 model WorkingHours {
@@ -97,6 +98,9 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  bookedById String?
+  bookedBy   User?   @relation("BookedBy", fields: [bookedById], references: [id])
+
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  dentist User    @relation(fields: [dentistId], references: [id])
+  dentist User    @relation("DentistAppointments", fields: [dentistId], references: [id])
 }

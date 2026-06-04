@@ -4,7 +4,7 @@ import { Header } from "@/components/admin/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, TrendingUp, XCircle, Clock, ChevronRight } from "lucide-react";
+import { Calendar, Users, TrendingUp, XCircle, Clock, ChevronRight, Globe, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { formatTime, formatDate } from "@/lib/utils";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
@@ -54,6 +54,7 @@ export default async function DashboardPage() {
       include: {
         patient: { select: { firstName: true, lastName: true } },
         dentist: { select: { name: true } },
+        bookedBy: { select: { id: true, name: true } },
       },
       orderBy: { startTime: "asc" },
     }),
@@ -129,6 +130,15 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {apt.bookedBy ? (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium">
+                          <UserCheck className="w-3 h-3" />{apt.bookedBy.name.split(" ")[0]}
+                        </span>
+                      ) : (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                          <Globe className="w-3 h-3" />Online
+                        </span>
+                      )}
                       <Badge variant={statusVariant[apt.status]}>
                         {statusLabel[apt.status]}
                       </Badge>

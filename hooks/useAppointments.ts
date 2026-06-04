@@ -3,17 +3,25 @@ import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
 import type { AppointmentStatus } from "@/types";
 
+export const APPOINTMENTS_PAGE_SIZE = 20;
+
 interface AppointmentFilters {
   date: string;
   status?: string;
   dentistId?: string;
+  page?: number;
 }
 
 export function useAppointments(filters: AppointmentFilters) {
+  const page = filters.page ?? 1;
   return useQuery({
     queryKey: queryKeys.appointments.list(filters),
     queryFn: async () => {
-      const params = new URLSearchParams({ date: filters.date });
+      const params = new URLSearchParams({
+        date: filters.date,
+        limit: String(APPOINTMENTS_PAGE_SIZE),
+        page: String(page),
+      });
       if (filters.status && filters.status !== "ALL") params.set("status", filters.status);
       if (filters.dentistId && filters.dentistId !== "ALL") params.set("dentistId", filters.dentistId);
       const res = await fetch(`/api/appointments?${params}`);

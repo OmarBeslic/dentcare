@@ -12,6 +12,7 @@ export type { User, Patient, Appointment, PatientRecord, Role, AppointmentStatus
 export type AppointmentWithRelations = Appointment & {
   patient: Pick<Patient, "id" | "firstName" | "lastName" | "phone">;
   dentist: Pick<User, "id" | "name" | "email">;
+  bookedBy: Pick<User, "id" | "name"> | null;
 };
 
 export type PatientWithStats = Patient & {
