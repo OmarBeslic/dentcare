@@ -10,7 +10,10 @@ if (fs.existsSync(envPath)) {
     const eq = trimmed.indexOf("=");
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
-    const val = trimmed.slice(eq + 1).trim().replace(/^"|"$/g, "");
+    const val = trimmed
+      .slice(eq + 1)
+      .trim()
+      .replace(/^"|"$/g, "");
     if (!process.env[key]) process.env[key] = val;
   }
 }
@@ -44,39 +47,61 @@ async function seedWorkingHours(userId: string) {
 async function main() {
   console.log("🌱  Seeding database...");
 
-  let admin = await prisma.user.findUnique({ where: { email: "admin@dentcare.rs" } });
+  let admin = await prisma.user.findUnique({
+    where: { email: "admin@dentcare.me" },
+  });
   if (!admin) {
     admin = await prisma.user.create({
       data: {
-        name: "Dr. Ana Jovanović",
-        email: "admin@dentcare.rs",
-        password: await bcrypt.hash("admin123", 10),
+        name: "Dr. Omar Beslic",
+        email: "admin@dentcare.me",
+        password: await bcrypt.hash("test123", 10),
         role: Role.ADMIN,
       },
     });
-    console.log("✅  Admin user created: admin@dentcare.rs / admin123");
+    console.log("✅  Admin user created: admin@dentcare.me / test123");
   } else {
     console.log("✅  Admin user already exists — skipping.");
   }
   await seedWorkingHours(admin.id);
 
-  let dentist = await prisma.user.findUnique({ where: { email: "dr.marko@dentcare.rs" } });
+  let dentist = await prisma.user.findUnique({
+    where: { email: "dr.marko@dentcare.me" },
+  });
   if (!dentist) {
     dentist = await prisma.user.create({
       data: {
         name: "Dr. Marko Nikolić",
-        email: "dr.marko@dentcare.rs",
-        password: await bcrypt.hash("dentist123", 10),
+        email: "dr.marko@dentcare.me",
+        password: await bcrypt.hash("test123", 10),
         role: Role.DENTIST,
       },
     });
-    console.log("✅  Dentist created: dr.marko@dentcare.rs / dentist123");
+    console.log("✅  Dentist created: dr.marko@dentcare.me / test123");
   }
   await seedWorkingHours(dentist.id);
 
+  let assistant = await prisma.user.findUnique({
+    where: { email: "assistant.marko@dentcare.me" },
+  });
+  
+  if (!assistant) {
+    dentist = await prisma.user.create({
+      data: {
+        name: "Assistant Marko Nikolić",
+        email: "assistant.marko@dentcare.me",
+        password: await bcrypt.hash("test123", 10),
+        role: Role.ASSISTANT,
+      },
+    });
+    console.log("✅  Assistant created: assistant.marko@dentcare.me / test123");
+  }
   console.log("🎉  Seed complete.");
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

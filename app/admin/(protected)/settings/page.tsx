@@ -34,12 +34,6 @@ export default function SettingsPage() {
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "DENTIST" as Role });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (session && session.user.role !== "ADMIN") {
-      router.push("/admin/dashboard");
-    }
-  }, [session, router]);
-
   const { data: users = [], isPending } = useUsers();
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
@@ -72,6 +66,12 @@ export default function SettingsPage() {
     if (!deleteId) return;
     deleteUser.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
   }
+
+  useEffect(() => {
+    if (session && session.user.role !== "ADMIN") {
+      router.push("/admin/dashboard");
+    }
+  }, [session, router]);
 
   if (!session) return null;
 

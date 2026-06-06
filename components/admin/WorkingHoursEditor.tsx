@@ -59,11 +59,6 @@ export function WorkingHoursEditor({ dentists }: { dentists: DentistOption[] }) 
     enabled: !!dentistId,
   });
 
-  // Sync local state when data loads or dentist changes
-  useEffect(() => {
-    if (data) setLocal(data);
-  }, [data]);
-
   const save = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/working-hours", {
@@ -85,6 +80,11 @@ export function WorkingHoursEditor({ dentists }: { dentists: DentistOption[] }) 
       prev.map((d) => (d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d))
     );
   }
+
+  // Sync local state when data loads or dentist changes
+  useEffect(() => {
+    if (data) setLocal(data);
+  }, [data]);
 
   return (
     <div className="space-y-4">

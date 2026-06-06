@@ -77,12 +77,6 @@ export default function BookPage() {
   const slots: Slot[] = availData?.slots ?? [];
   const offDay: boolean = availData?.offDay ?? false;
 
-  // Reset selected time when availability params change
-  const { dentistId, date, duration } = form;
-  useEffect(() => {
-    setForm((f) => ({ ...f, startTime: "" }));
-  }, [dentistId, date, duration]);
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
@@ -133,6 +127,11 @@ export default function BookPage() {
       type: "", dentistId: "", date: "", duration: "30", startTime: "", message: "",
     });
   }
+
+  // Reset selected time when availability params change
+  useEffect(() => {
+    setForm((f) => ({ ...f, startTime: "" }));
+  }, [form.dentistId, form.date, form.duration]);
 
   if (result) {
     const dt = new Date(result.startTime);

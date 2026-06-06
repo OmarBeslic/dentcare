@@ -37,20 +37,6 @@ export default function EditRecordPage() {
   const { data, isPending } = useRecord(patientId, recordId);
   const updateRecord = useUpdateRecord(patientId, recordId);
 
-  // Populate form when data loads
-  useEffect(() => {
-    if (data && !form.visitDate) {
-      setForm({
-        visitDate: format(new Date(data.visitDate), "yyyy-MM-dd"),
-        diagnosis: data.diagnosis ?? "",
-        treatment: data.treatment ?? "",
-        prescription: data.prescription ?? "",
-        notes: data.notes ?? "",
-      });
-      setToothChart((data.toothChart as ToothChartType) ?? {});
-    }
-  }, [data, form.visitDate]);
-
   function update(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
   }
@@ -71,6 +57,20 @@ export default function EditRecordPage() {
       }
     );
   }
+
+  // Populate form when data loads
+  useEffect(() => {
+    if (data && !form.visitDate) {
+      setForm({
+        visitDate: format(new Date(data.visitDate), "yyyy-MM-dd"),
+        diagnosis: data.diagnosis ?? "",
+        treatment: data.treatment ?? "",
+        prescription: data.prescription ?? "",
+        notes: data.notes ?? "",
+      });
+      setToothChart((data.toothChart as ToothChartType) ?? {});
+    }
+  }, [data, form.visitDate]);
 
   if (!session) return null;
 
