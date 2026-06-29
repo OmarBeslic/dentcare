@@ -14,6 +14,11 @@ export default async function ProtectedLayout({
     redirect("/admin/login");
   }
 
+  // SUPER_ADMIN has no clinic and belongs in /super-admin, not the regular admin UI.
+  if (session.user.role === "SUPER_ADMIN") {
+    redirect("/super-admin");
+  }
+
   const user = {
     name: session.user.name ?? "User",
     email: session.user.email ?? "",
