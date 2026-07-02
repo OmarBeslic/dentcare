@@ -19,19 +19,45 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
-model User {
+model Clinic {
   id        String   @id @default(cuid())
   name      String
-  email     String   @unique
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+
+  // What assistants cannot see — JSON flags, e.g. { "financials": true }
+  assistantRestrictions Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  patients     Patient[]
+  appointments Appointment[]
+  toothRecords ToothRecord[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clinicId  String
+  name      String
+  email     String
   password  String
   role      Role     @default(ASSISTANT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+
   appointments        Appointment[]  @relation("DentistAppointments")
   bookedAppointments  Appointment[]  @relation("BookedBy")
-  createdRecords      PatientRecord[] @relation("CreatedBy")
+  toothRecords        ToothRecord[]
   workingHours        WorkingHours[]
+  createdPatients     Patient[]      @relation("CreatedBy")
+
+  @@unique([clinicId, email])
 }
 
 model WorkingHours {
@@ -49,43 +75,73 @@ model WorkingHours {
 
 model Patient {
   id          String   @id @default(cuid())
+  clinicId    String
+  createdById String?
   firstName   String
   lastName    String
   dateOfBirth DateTime
-  jmbg        String   @unique
+  jmbg        String
   phone       String
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  clinic     Clinic @relation(fields: [clinicId], references: [id])
+  createdBy  User?  @relation("CreatedBy", fields: [createdById], references: [id])
+
   appointments Appointment[]
-  records      PatientRecord[]
+  toothRecords ToothRecord[]
+  toothChart   PatientToothChart?
+
+  @@unique([clinicId, jmbg])
 }
 
-model PatientRecord {
-  id          String  @id @default(cuid())
-  patientId   String
-  createdById String
+model ToothRecord {
+  id        String @id @default(cuid())
+  patientId String
+  clinicId  String
+  dentistId String
 
-  diagnosis    String?
-  treatment    String?
-  prescription String?
-  notes        String?
-  toothChart   Json?
-  attachments  String[]
+  // Treated teeth — array of FDI numbers, e.g. [11, 21, 36]
+  treatedTeeth Int[]
 
-  visitDate DateTime @default(now())
+  visitDate   DateTime @default(now())
+  diagnosis   String?
+  serviceType String
+  price       Decimal  @default(0) @db.Decimal(10, 2)
+  isPaid      Boolean  @default(false)
+  notes       String?
+
+  // Doctor signature stored as string at time of record creation.
+  // NOT a FK — dentist can be deleted but the record must remain valid.
+  doctorSignature String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  createdBy User    @relation("CreatedBy", fields: [createdById], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinic  Clinic  @relation(fields: [clinicId], references: [id])
+  dentist User    @relation(fields: [dentistId], references: [id])
+}
+
+// Permanent tooth chart — one per patient, updated over time
+model PatientToothChart {
+  id        String @id @default(cuid())
+  patientId String @unique
+
+  // JSON map: { "11": "caries", "21": "missing", "36": "crown", "46": "implant" }
+  chartData Json @default("{}")
+
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }
 
 model Appointment {
   id        String @id @default(cuid())
   patientId String
   dentistId String
+  clinicId  String
 
   startTime DateTime
   endTime   DateTime
@@ -103,4 +159,5 @@ model Appointment {
 
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
   dentist User    @relation("DentistAppointments", fields: [dentistId], references: [id])
+  clinic  Clinic  @relation(fields: [clinicId], references: [id])
 }
