@@ -10,47 +10,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUpdateClinic } from "@/hooks/useSuperAdminClinics";
 
 export function ClinicDetailClient({ clinic }: { clinic: Clinic }) {
   const router = useRouter();
   const [form, setForm] = useState({ name: clinic.name });
-  const [saving, setSaving] = useState(false);
-  const [toggling, setToggling] = useState(false);
 
-  async function patchClinic(body: object) {
-    const res = await fetch(`/api/super-admin/clinics/${clinic.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    return res;
-  }
+  const saveDetails = useUpdateClinic(clinic.id);
+  const toggleStatus = useUpdateClinic(clinic.id);
 
-  async function handleSave(e: React.FormEvent) {
+  function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    const res = await patchClinic(form);
-    setSaving(false);
-
-    if (res.ok) {
-      toast.success("Klinika je ažurirana");
-      router.refresh();
-    } else {
-      toast.error("Greška pri čuvanju izmena");
-    }
+    saveDetails.mutate(form, {
+      onSuccess: () => {
+        toast.success("Klinika je ažurirana");
+        router.refresh();
+      },
+      onError: () => toast.error("Greška pri čuvanju izmena"),
+    });
   }
 
-  async function handleToggleActive() {
-    setToggling(true);
-    const res = await patchClinic({ isActive: !clinic.isActive });
-    setToggling(false);
-
-    if (res.ok) {
-      toast.success(clinic.isActive ? "Klinika je deaktivirana" : "Klinika je aktivirana");
-      router.refresh();
-    } else {
-      toast.error("Greška pri promeni statusa");
-    }
+  function handleToggleActive() {
+    toggleStatus.mutate({ isActive: !clinic.isActive }, {
+      onSuccess: () => {
+        toast.success(clinic.isActive ? "Klinika je deaktivirana" : "Klinika je aktivirana");
+        router.refresh();
+      },
+      onError: () => toast.error("Greška pri promeni statusa"),
+    });
   }
 
   return (
@@ -62,8 +49,8 @@ export function ClinicDetailClient({ clinic }: { clinic: Clinic }) {
             {clinic.isActive ? "Aktivna" : "Neaktivna"}
           </Badge>
         </CardTitle>
-        <Button variant="outline" size="sm" onClick={handleToggleActive} disabled={toggling}>
-          {toggling ? (
+        <Button variant="outline" size="sm" onClick={handleToggleActive} disabled={toggleStatus.isPending}>
+          {toggleStatus.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : clinic.isActive ? (
             "Deaktiviraj"
@@ -79,8 +66,8 @@ export function ClinicDetailClient({ clinic }: { clinic: Clinic }) {
             <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <Button type="submit" disabled={saveDetails.isPending}>
+              {saveDetails.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Sačuvaj
             </Button>
           </div>

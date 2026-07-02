@@ -8,37 +8,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCreateClinic } from "@/hooks/useSuperAdminClinics";
 
 export default function NewClinicPage() {
   const router = useRouter();
+  const createClinic = useCreateClinic();
   const [name, setName] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
-
-    const res = await fetch("/api/super-admin/clinics", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+    createClinic.mutate(name, {
+      onSuccess: () => {
+        toast.success("Klinika je uspješno kreirana");
+        router.push("/super-admin");
+      },
+      onError: (err: unknown) => {
+        const e = err as { status?: number; data?: { error?: { fieldErrors?: { name?: string[] } } | string } };
+        if (e?.status === 400 && typeof e.data?.error === "object" && e.data.error?.fieldErrors?.name) {
+          setError(e.data.error.fieldErrors.name[0]);
+        } else {
+          toast.error(typeof e.data?.error === "string" ? e.data.error : "Greška pri kreiranju klinike");
+        }
+      },
     });
-
-    if (res.ok) {
-      toast.success("Klinika je uspešno kreirana");
-      router.push("/super-admin");
-      return;
-    }
-
-    const data = await res.json().catch(() => ({}));
-    if (data?.error?.fieldErrors?.name) {
-      setError(data.error.fieldErrors.name[0]);
-    } else {
-      toast.error(typeof data?.error === "string" ? data.error : "Greška pri kreiranju klinike");
-    }
-    setLoading(false);
   }
 
   return (
@@ -59,11 +53,9 @@ export default function NewClinicPage() {
               <Button type="button" variant="outline" onClick={() => router.push("/super-admin")}>
                 Otkaži
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Kreiranje...
-                  </>
+              <Button type="submit" disabled={createClinic.isPending}>
+                {createClinic.isPending ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Kreiranje...</>
                 ) : (
                   "Sačuvaj i kreiraj"
                 )}
