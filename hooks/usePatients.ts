@@ -23,6 +23,26 @@ export function usePatients(search: string, page = 1) {
   });
 }
 
+export function useCreatePatient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, string>) => {
+      const res = await fetch("/api/patients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) throw { status: res.status, data: json };
+      return json as { id: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.patients.all });
+      toast.success("Pacijent uspješno dodat!");
+    },
+  });
+}
+
 export function useUpdatePatient(id: string) {
   const queryClient = useQueryClient();
   return useMutation({

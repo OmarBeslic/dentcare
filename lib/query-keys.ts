@@ -17,4 +17,17 @@ export const queryKeys = {
     all: ["users"] as const,
     list: () => ["users", "list"] as const,
   },
+  toothRecords: {
+    all: (patientId: string) => ["tooth-records", patientId] as const,
+    list: (patientId: string, toothNumber: number | null) =>
+      ["tooth-records", patientId, toothNumber] as const,
+  },
+  toothChart: {
+    detail: (patientId: string) => ["tooth-chart", patientId] as const,
+  },
+  clinics: {
+    all: ["clinics"] as const,
+    list: () => ["clinics", "list"] as const,
+    current: () => ["clinics", "current"] as const,
+  },
 };
