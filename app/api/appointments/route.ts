@@ -4,10 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { appointmentSchema } from "@/lib/validations";
 import { addMinutes } from "@/lib/utils";
 import { startOfDay, endOfDay } from "date-fns";
+import { getEffectiveClinicId } from "@/lib/clinic-scope";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role === "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { role, id: userId, clinicId } = session.user;
 
   const { searchParams } = new URL(req.url);
   const date = searchParams.get("date");
@@ -22,8 +28,24 @@ export async function GET(req: NextRequest) {
     const d = new Date(date);
     where.startTime = { gte: startOfDay(d), lte: endOfDay(d) };
   }
-  if (dentistId) where.dentistId = dentistId;
   if (status && status !== "ALL") where.status = status;
+
+  // Role-based scoping — a DENTIST is always pinned to their own
+  // appointments regardless of the dentistId query param; ASSISTANT is
+  // confined to their own clinic; ADMIN follows the ClinicSwitcher
+  // selection (or sees every clinic when "Sve klinike" is chosen) and may
+  // additionally filter by dentist.
+  if (role === "DENTIST") {
+    where.dentistId = userId;
+    if (clinicId) where.clinicId = clinicId;
+  } else if (role === "ASSISTANT") {
+    if (clinicId) where.clinicId = clinicId;
+    if (dentistId) where.dentistId = dentistId;
+  } else {
+    const effectiveClinicId = await getEffectiveClinicId(role, clinicId);
+    if (effectiveClinicId) where.clinicId = effectiveClinicId;
+    if (dentistId) where.dentistId = dentistId;
+  }
 
   const [appointments, total] = await Promise.all([
     prisma.appointment.findMany({
@@ -46,6 +68,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role === "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const effectiveClinicId = await getEffectiveClinicId(session.user.role, session.user.clinicId);
+  if (!effectiveClinicId) {
+    return NextResponse.json(
+      { error: "Izaberite kliniku prije zakazivanja termina." },
+      { status: 400 }
+    );
+  }
+  const clinicId = effectiveClinicId;
 
   const body = await req.json();
   const parsed = appointmentSchema.safeParse(body);
@@ -54,6 +88,16 @@ export async function POST(req: NextRequest) {
   }
 
   const { patientId, dentistId, startTime, duration, type, notes } = parsed.data;
+
+  // Patient and dentist must belong to the clinic being booked into
+  const [patient, dentist] = await Promise.all([
+    prisma.patient.findUnique({ where: { id: patientId }, select: { clinicId: true } }),
+    prisma.user.findUnique({ where: { id: dentistId }, select: { clinicId: true } }),
+  ]);
+  if (!patient || patient.clinicId !== clinicId || !dentist || dentist.clinicId !== clinicId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const start = new Date(startTime);
   const end = addMinutes(start, duration);
 
@@ -79,6 +123,7 @@ export async function POST(req: NextRequest) {
 
   const appointment = await prisma.appointment.create({
     data: {
+      clinicId,
       patientId,
       dentistId,
       bookedById: session.user.id,

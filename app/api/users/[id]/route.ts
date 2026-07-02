@@ -12,19 +12,25 @@ export async function PATCH(
   if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const body = await req.json();
+  const { clinicId: _clinicId, id: _id, ...data } = await req.json();
 
-  if (body.password) {
-    body.password = await bcrypt.hash(body.password, 10);
+  if (data.password) {
+    data.password = await bcrypt.hash(data.password, 10);
   }
 
-  const user = await prisma.user.update({
-    where: { id },
-    data: body,
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
-  });
-
-  return NextResponse.json(user);
+  try {
+    const user = await prisma.user.update({
+      where: { id, clinicId: session.user.clinicId! },
+      data,
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
+    return NextResponse.json(user);
+  } catch (e: unknown) {
+    if ((e as { code?: string }).code === "P2025") {
+      return NextResponse.json({ error: "Korisnik nije pronađen." }, { status: 404 });
+    }
+    throw e;
+  }
 }
 
 export async function DELETE(
@@ -37,11 +43,18 @@ export async function DELETE(
 
   const { id } = await params;
 
-  // Prevent deleting yourself
+  // prevent deleting yourself
   if (id === session.user.id) {
     return NextResponse.json({ error: "Ne možete obrisati svoj nalog." }, { status: 400 });
   }
 
-  await prisma.user.delete({ where: { id } });
-  return NextResponse.json({ success: true });
+  try {
+    await prisma.user.delete({ where: { id, clinicId: session.user.clinicId! } });
+    return NextResponse.json({ success: true });
+  } catch (e: unknown) {
+    if ((e as { code?: string }).code === "P2025") {
+      return NextResponse.json({ error: "Korisnik nije pronađen." }, { status: 404 });
+    }
+    throw e;
+  }
 }

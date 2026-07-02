@@ -49,14 +49,41 @@ export const userSchema = z.object({
   role: z.enum(["ADMIN", "DENTIST", "ASSISTANT"]),
 });
 
-export const publicBookingSchema = z.object({
-  firstName: z.string().min(2, "Ime mora imati najmanje 2 karaktera"),
-  lastName: z.string().min(2, "Prezime mora imati najmanje 2 karaktera"),
-  phone: z.string().min(6, "Telefon nije validan"),
-  email: z.string().email("Email nije validan").optional().or(z.literal("")),
-  type: z.string().min(1, "Tip pregleda je obavezan"),
-  dentistId: z.string().min(1, "Izaberite doktora"),
-  startTime: z.string().min(1, "Izaberite vrijeme termina"),
-  duration: z.coerce.number().default(30),
-  message: z.string().optional(),
+export const createClinicSchema = z.object({
+  name: z.string().min(2, "Naziv klinike mora imati najmanje 2 karaktera"),
 });
+
+export const updateClinicSchema = z.object({
+  name: z.string().min(2, "Naziv klinike mora imati najmanje 2 karaktera").optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const toothRecordSchema = z.object({
+  patientId: z.string().min(1, "Pacijent je obavezan"),
+  treatedTeeth: z
+    .array(z.coerce.number().int())
+    .min(1, "Izaberite bar jedan zub"),
+  diagnosis: z.string().optional(),
+  serviceType: z.string().min(1, "Tip usluge je obavezan"),
+  price: z.coerce.number().min(0).default(0),
+  isPaid: z.boolean().default(false),
+  notes: z.string().optional(),
+  visitDate: z.string().min(1, "Datum posete je obavezan"),
+});
+
+export const toothRecordUpdateSchema = toothRecordSchema
+  .omit({ patientId: true })
+  .partial();
+
+export const toothChartUpdateSchema = z.object({
+  toothNumber: z.coerce.number().int(),
+  condition: z.enum(["healthy", "caries", "missing", "crown", "implant", "treated"]),
+});
+
+export const assistantRestrictionsSchema = z.object({
+  financials: z.boolean().optional(),
+  diagnosis: z.boolean().optional(),
+  patientNotes: z.boolean().optional(),
+  jmbg: z.boolean().optional(),
+});
+

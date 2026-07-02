@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isGlobalRole } from "@/lib/clinic-scope";
 
 export async function GET(
   _req: NextRequest,
@@ -17,15 +18,18 @@ export async function GET(
         include: { dentist: { select: { id: true, name: true } } },
         orderBy: { startTime: "desc" },
       },
-      records: {
-        include: { createdBy: { select: { id: true, name: true } } },
+      toothRecords: {
         orderBy: { visitDate: "desc" },
       },
-      _count: { select: { appointments: true, records: true } },
+      toothChart: true,
+      _count: { select: { appointments: true, toothRecords: true } },
     },
   });
 
   if (!patient) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!isGlobalRole(session.user.role) && patient.clinicId !== session.user.clinicId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   return NextResponse.json(patient);
 }
 
@@ -37,7 +41,14 @@ export async function PATCH(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+  const existing = await prisma.patient.findUnique({ where: { id }, select: { clinicId: true } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!isGlobalRole(session.user.role) && existing.clinicId !== session.user.clinicId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await req.json();
+  delete body.clinicId;
 
   if (body.dateOfBirth) body.dateOfBirth = new Date(body.dateOfBirth);
 
@@ -53,6 +64,12 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+  const existing = await prisma.patient.findUnique({ where: { id }, select: { clinicId: true } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!isGlobalRole(session.user.role) && existing.clinicId !== session.user.clinicId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   await prisma.patient.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
