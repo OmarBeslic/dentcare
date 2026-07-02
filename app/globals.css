@@ -23,6 +23,11 @@
   --success: #16A34A;
   --success-foreground: #FFFFFF;
   --radius: 0.75rem;
+
+  --tooth-caries: #FEF08A;
+  --tooth-missing: #D1D5DB;
+  --tooth-crown: #BFDBFE;
+  --tooth-implant: #DDD6FE;
 }
 
 @theme inline {
@@ -47,6 +52,10 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-tooth-caries: var(--tooth-caries);
+  --color-tooth-missing: var(--tooth-missing);
+  --color-tooth-crown: var(--tooth-crown);
+  --color-tooth-implant: var(--tooth-implant);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
