@@ -20,7 +20,7 @@ interface Props {
 
 export function PatientAppointmentHistory({ appointments }: Props) {
   if (appointments.length === 0) {
-    return <EmptyState icon={Clock} message="Nema termina." />;
+    return <EmptyState icon={Clock} message="Nema zakazanih termina." />;
   }
 
   return (
