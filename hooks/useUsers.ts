@@ -3,12 +3,13 @@ import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
 import type { Role } from "@prisma/client";
 
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
   role: Role;
   createdAt: string;
+  clinic: { name: string };
 }
 
 export function useUsers() {
