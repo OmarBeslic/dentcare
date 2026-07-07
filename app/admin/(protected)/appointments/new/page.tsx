@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Header } from "@/components/admin/Header";
+import type { Role } from "@prisma/client";
+import { Header } from "@/app/admin/_components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,7 +125,7 @@ export default function NewAppointmentPage() {
     <div>
       <Header
         title="Novi termin"
-        user={{ name: session.user.name, role: session.user.role }}
+        user={{ name: session.user.name, role: session.user.role as Role }}
       />
       <div className="p-4 lg:p-6 max-w-3xl">
         <Button asChild variant="ghost" size="sm" className="mb-4">
