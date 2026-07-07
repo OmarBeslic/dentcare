@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { Sidebar } from "@/components/admin/Sidebar";
-import { MobileNav } from "@/components/admin/MobileNav";
+import { Sidebar } from "@/app/admin/_components/Sidebar";
+import { MobileNav } from "@/app/admin/_components/MobileNav";
 
 export default async function ProtectedLayout({
   children,
