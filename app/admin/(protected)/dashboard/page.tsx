@@ -162,7 +162,7 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="text-sm font-semibold text-primary w-12 flex-shrink-0">
+                      <div className="text-sm font-semibold text-primary w-12 shrink-0">
                         {formatTime(apt.startTime)}
                       </div>
                       <div className="min-w-0">
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
                       <span className="hidden sm:inline-flex">
                         <BookedByBadge bookedBy={apt.bookedBy} />
                       </span>
