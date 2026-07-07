@@ -27,6 +27,7 @@ import { useUsers } from "@/hooks/useUsers";
 import { usePatientSearch } from "@/hooks/usePatients";
 import { useAvailability } from "@/hooks/useAvailability";
 import { useCreateAppointment } from "@/hooks/useAppointments";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const appointmentTypes = [
   "Kontrola",
@@ -47,6 +48,7 @@ export default function NewAppointmentPage() {
   const createAppointment = useCreateAppointment();
 
   const [patientSearch, setPatientSearch] = useState("");
+  const patientSearchDebounce = useDebounce(patientSearch, 500);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
   const [form, setForm] = useState({
     patientId: "",
@@ -60,7 +62,7 @@ export default function NewAppointmentPage() {
   });
 
   const { data: patientData } = usePatientSearch(
-    form.patientId ? "" : patientSearch,
+    form.patientId ? "" : patientSearchDebounce,
   );
 
   const dentists = (usersData ?? []).filter((u) =>
