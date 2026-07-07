@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Header } from "@/components/admin/Header";
+import { Header } from "@/app/admin/_components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useCreatePatient } from "@/hooks/usePatients";
 
 export default function NewPatientPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const [submitting, setSubmitting] = useState(false);
+  const createPatient = useCreatePatient();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
@@ -33,33 +34,25 @@ export default function NewPatientPage() {
     setErrors((e) => ({ ...e, [field]: "" }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setErrors({});
-
-    const res = await fetch("/api/patients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+    createPatient.mutate(form, {
+      onSuccess: (data) => router.push(`/admin/patients/${data.id}`),
+      onError: (err: unknown) => {
+        const e = err as { status?: number; data?: { error?: { fieldErrors?: Record<string, string[]> } | string } };
+        if (e?.status === 400 && typeof e.data?.error === "object" && e.data.error?.fieldErrors) {
+          const fe: Record<string, string> = {};
+          for (const [k, msgs] of Object.entries(e.data.error.fieldErrors)) {
+            fe[k] = (msgs as string[])[0];
+          }
+          setErrors(fe);
+        } else {
+          const msg = typeof e.data?.error === "string" ? e.data.error : "Greška pri dodavanju pacijenta.";
+          toast.error(msg);
+        }
+      },
     });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      toast.success("Pacijent uspješno dodat!");
-      router.push(`/admin/patients/${data.id}`);
-    } else if (res.status === 400 && data.error?.fieldErrors) {
-      const fieldErrors: Record<string, string> = {};
-      for (const [key, msgs] of Object.entries(data.error.fieldErrors)) {
-        fieldErrors[key] = (msgs as string[])[0];
-      }
-      setErrors(fieldErrors);
-      setSubmitting(false);
-    } else {
-      toast.error(data.error ?? "Greška pri dodavanju pacijenta.");
-      setSubmitting(false);
-    }
   }
 
   if (!session) return null;
@@ -142,8 +135,8 @@ export default function NewPatientPage() {
                 />
               </div>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-                  {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Dodavanje...</> : "Dodaj pacijenta"}
+                <Button type="submit" disabled={createPatient.isPending} className="w-full sm:w-auto">
+                  {createPatient.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Dodavanje...</> : "Dodaj pacijenta"}
                 </Button>
                 <Button type="button" variant="outline" asChild className="w-full sm:w-auto">
                   <Link href="/admin/patients">Otkaži</Link>
