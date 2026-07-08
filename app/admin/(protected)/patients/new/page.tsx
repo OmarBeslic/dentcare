@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Header } from "@/app/admin/_components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -31,7 +29,6 @@ export default function NewPatientPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const createPatient = useCreatePatient();
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const form = useForm<FormValues>({
     resolver: zodResolver(patientSchema),
@@ -45,12 +42,7 @@ export default function NewPatientPage() {
     },
   });
 
-  function update(field: string, value: string) {
-    setErrors((e) => ({ ...e, [field]: "" }));
-  }
-
   function onSubmit(values: FormValues) {
-    setErrors({});
     createPatient.mutate(values, {
       onSuccess: (data) => router.push(`/admin/patients/${data.id}`),
       onError: (err: unknown) => {
@@ -60,23 +52,12 @@ export default function NewPatientPage() {
             error?: { fieldErrors?: Record<string, string[]> } | string;
           };
         };
-        if (
-          e?.status === 400 &&
-          typeof e.data?.error === "object" &&
-          e.data.error?.fieldErrors
-        ) {
-          const fe: Record<string, string> = {};
-          for (const [k, msgs] of Object.entries(e.data.error.fieldErrors)) {
-            fe[k] = (msgs as string[])[0];
-          }
-          setErrors(fe);
-        } else {
-          const msg =
-            typeof e.data?.error === "string"
-              ? e.data.error
-              : "Greška pri dodavanju pacijenta.";
-          toast.error(msg);
-        }
+
+        const msg =
+          typeof e.data?.error === "string"
+            ? e.data.error
+            : "Greška pri dodavanju pacijenta.";
+        toast.error(msg);
       },
     });
   }
