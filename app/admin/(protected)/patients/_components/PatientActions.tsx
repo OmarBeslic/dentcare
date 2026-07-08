@@ -4,42 +4,49 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ConfirmDialog } from "@/app/admin/_components/ConfirmDialog";
 import { useUpdatePatient, useDeletePatient } from "@/hooks/usePatients";
 import type { Patient } from "@/types";
+import z from "zod";
+import { patientSchema } from "@/lib/validations";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface Props {
   patient: Patient;
 }
+type FormValues = z.infer<typeof patientSchema>;
 
 export function PatientActions({ patient }: Props) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const [form, setForm] = useState({
-    firstName: patient.firstName,
-    lastName: patient.lastName,
-    phone: patient.phone,
-    jmbg: patient.jmbg,
-    dateOfBirth: format(new Date(patient.dateOfBirth), "yyyy-MM-dd"),
-    notes: patient.notes ?? "",
+  const form = useForm<FormValues>({
+    resolver: zodResolver(patientSchema),
+    defaultValues: {
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      phone: patient.phone,
+      jmbg: patient.jmbg,
+      dateOfBirth: format(new Date(patient.dateOfBirth), "yyyy-MM-dd"),
+      notes: patient.notes ?? "",
+    },
   });
 
   const update = useUpdatePatient(patient.id);
   const remove = useDeletePatient();
 
-  function handleEdit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleEdit(values: FormValues) {
     update.mutate(
-      { ...form, dateOfBirth: new Date(form.dateOfBirth).toISOString() },
+      { ...values, dateOfBirth: new Date(values.dateOfBirth).toISOString() },
       {
         onSuccess: () => {
           setEditOpen(false);
@@ -76,40 +83,96 @@ export function PatientActions({ patient }: Props) {
           <DialogHeader>
             <DialogTitle>Uredi pacijenta</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Ime *</Label>
-                <Input value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} required />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleEdit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ime *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Marko" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prezime *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Markovic" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Datum rodjenja *</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="jmbg"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>JMBG *</FormLabel>
+                      <FormControl>
+                        <Input maxLength={13} {...field} placeholder="1234567890123" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Telefon *</FormLabel>
+                      <FormControl>
+                        <Input {...field}  placeholder="+382 123 456 789" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div className="space-y-2">
-                <Label>Prezime *</Label>
-                <Input value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Datum rodjenja *</Label>
-                <Input type="date" value={form.dateOfBirth} onChange={(e) => setForm((f) => ({ ...f, dateOfBirth: e.target.value }))} required />
-              </div>
-              <div className="space-y-2">
-                <Label>JMBG *</Label>
-                <Input value={form.jmbg} onChange={(e) => setForm((f) => ({ ...f, jmbg: e.target.value }))} maxLength={13} required />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label>Telefon *</Label>
-                <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} required />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Napomene</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Otkaži</Button>
-              <Button type="submit" disabled={update.isPending}>
-                {update.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Čuvanje...</> : "Sačuvaj"}
-              </Button>
-            </DialogFooter>
-          </form>
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Napomene</FormLabel>
+                    <FormControl>
+                      <Textarea rows={3} {...field} placeholder="Napomene, alergije..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Otkaži</Button>
+                <Button type="submit" disabled={update.isPending}>
+                  {update.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Čuvanje...</> : "Sačuvaj"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
