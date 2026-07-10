@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Stethoscope, Phone, MapPin, Clock } from "lucide-react";
+import { SmilePlus, Phone, MapPin, Clock } from "lucide-react";
 
 export function Footer() {
   return (
@@ -9,7 +9,7 @@ export function Footer() {
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Stethoscope className="w-4 h-4 text-white" />
+                <SmilePlus className="w-4 h-4 text-white" />
               </div>
               <span className="font-display text-xl font-bold">DentCare</span>
             </div>

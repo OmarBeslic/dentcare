@@ -115,7 +115,7 @@ export default function AddStaffModal({ open, setOpen }: AddStaffModalProps) {
                 <FormItem>
                   <FormLabel>Email *</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="email@dentcare.rs" {...field} />
+                    <Input type="email" placeholder="email@dentcare.me" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

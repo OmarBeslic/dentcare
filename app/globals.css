@@ -30,6 +30,30 @@
   --tooth-implant: #DDD6FE;
 }
 
+/* Public marketing site — deep navy + warm terracotta, scoped so the admin
+   dashboard keeps its own teal/gold palette untouched. */
+.theme-public {
+  --background: #F7F5F1;
+  --foreground: #1C2B3A;
+  --card: #FFFFFF;
+  --card-foreground: #1C2B3A;
+  --primary: #1C2B3A;
+  --primary-light: #E4E7E9;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EDE9E2;
+  --secondary-foreground: #1C2B3A;
+  --accent: #C4694B;
+  --accent-light: #F3E3DC;
+  --accent-foreground: #FFFFFF;
+  --accent-2: #B08A45;
+  --accent-2-light: #EFE4CE;
+  --muted: #EDE9E2;
+  --muted-foreground: #6B6459;
+  --border: #E2DCD1;
+  --input: #E2DCD1;
+  --ring: #1C2B3A;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -43,6 +67,8 @@
   --color-accent: var(--accent);
   --color-accent-light: var(--accent-light);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-2: var(--accent-2, var(--accent));
+  --color-accent-2-light: var(--accent-2-light, var(--accent-light));
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);

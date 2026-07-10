@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Stethoscope, Loader2 } from "lucide-react";
+import { SmilePlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -50,7 +50,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-4 shadow-lg">
-            <Stethoscope className="w-7 h-7 text-white" />
+            <SmilePlus className="w-7 h-7 text-white" />
           </div>
           <h1 className="font-display text-2xl font-bold text-foreground">DentCare</h1>
           <p className="text-muted-foreground text-sm mt-1">Administrativni panel</p>
@@ -73,7 +73,7 @@ export default function LoginPage() {
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="admin@dentcare.rs"
+                          placeholder="admin@dentcare.me"
                           autoComplete="email"
                           {...field}
                         />

@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="sr" className={`${dmSans.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="cnr" className={`${dmSans.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
         <Toaster richColors position="top-right" />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Stethoscope, Menu, X } from "lucide-react";
+import { SmilePlus, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -31,11 +31,11 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b border-border">
+      <header className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Stethoscope className="w-4 h-4 text-white" />
+              <SmilePlus className="w-4 h-4 text-white" />
             </div>
             <span className="font-display text-xl font-bold text-primary">DentCare</span>
           </Link>
@@ -81,7 +81,7 @@ export function Navbar() {
         aria-modal="true"
         aria-label="Glavni meni"
         className={cn(
-          "md:hidden fixed top-16 inset-x-0 z-40 bg-card border-b border-border shadow-lg transition-transform duration-300 ease-in-out",
+          "md:hidden fixed top-16 inset-x-0 z-40 bg-card border-b border-border transition-transform duration-300 ease-in-out",
           open
             ? "translate-y-0 pointer-events-auto"
             : "-translate-y-[calc(100%+4rem)] pointer-events-none"

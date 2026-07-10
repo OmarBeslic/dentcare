@@ -8,7 +8,7 @@ import {
   Users,
   Settings,
   LogOut,
-  Stethoscope,
+  SmilePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -54,7 +54,7 @@ export function Sidebar({ user }: SidebarProps) {
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-border h-16">
         <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-          <Stethoscope className="w-4 h-4 text-white" />
+          <SmilePlus className="w-4 h-4 text-white" />
         </div>
         <span className="font-display text-lg font-semibold text-primary hidden lg:block">
           DentCare
