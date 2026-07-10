@@ -58,7 +58,8 @@ export function ClinicSwitcher() {
     }
   }
 
-  if (isPending) return <Skeleton className="h-9 w-36" />;
+  if (isPending && clinics.length === 0) return <Skeleton className="h-9 w-36" />;
+  if (clinics.length < 2) return null;
 
   const currentLabel =
     selected === "all" ? "Sve klinike" : clinics.find((c) => c.id === selected)?.name ?? "Sve klinike";
