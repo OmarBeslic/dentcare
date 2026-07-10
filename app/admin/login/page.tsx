@@ -1,38 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Stethoscope, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+// Local schema — login has no dedicated shared schema; the server just checks
+// credentials via NextAuth's authorize(), so this only needs "is it filled in".
+const loginSchema = z.object({
+  email: z.string().email("Email nije validan"),
+  password: z.string().min(1, "Lozinka je obavezna"),
+  rememberMe: z.boolean(),
+});
+type FormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  const form = useForm<FormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "", rememberMe: false },
+  });
 
+  async function onSubmit(values: FormValues) {
     const result = await signIn("credentials", {
-      email,
-      password,
-      rememberMe: String(rememberMe),
+      email: values.email,
+      password: values.password,
+      rememberMe: String(values.rememberMe),
       redirect: false,
     });
 
     if (result?.error) {
-      setError("Pogrešan email ili lozinka.");
-      setLoading(false);
+      form.setError("root", { message: "Pogrešan email ili lozinka." });
     } else {
       router.push("/admin/dashboard");
       router.refresh();
@@ -42,7 +48,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-4 shadow-lg">
             <Stethoscope className="w-7 h-7 text-white" />
@@ -57,61 +62,83 @@ export default function LoginPage() {
             <CardDescription>Unesite vaše kredencijale</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@dentcare.rs"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="admin@dentcare.rs"
+                          autoComplete="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Lozinka</Label>
-                <PasswordInput
-                  id="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Lozinka</FormLabel>
+                      <FormControl>
+                        <PasswordInput
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  id="rememberMe"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                <FormField
+                  control={form.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <input
+                          id="rememberMe"
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                        />
+                      </FormControl>
+                      <FormLabel htmlFor="rememberMe" className="text-sm font-normal cursor-pointer mt-0!">
+                        Zapamti me
+                      </FormLabel>
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
-                  Zapamti me
-                </Label>
-              </div>
 
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
-                  {error}
-                </p>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Prijavljivanje...
-                  </>
-                ) : (
-                  "Prijavi se"
+                {form.formState.errors.root && (
+                  <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+                    {form.formState.errors.root.message}
+                  </p>
                 )}
-              </Button>
-            </form>
+
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Prijavljivanje...
+                    </>
+                  ) : (
+                    "Prijavi se"
+                  )}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>

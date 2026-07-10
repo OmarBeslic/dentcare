@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
@@ -19,35 +18,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCreateUser } from "@/hooks/useUsers";
-import type { Role } from "@prisma/client";
 import { Loader2, Plus } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import { userSchema } from "@/lib/validations";
 
 interface AddStaffModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
 }
 
+type FormValues = z.infer<typeof userSchema>;
+
 export default function AddStaffModal({ open, setOpen }: AddStaffModalProps) {
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [newUser, setNewUser] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "DENTIST" as Role,
-  });
   const createUser = useCreateUser();
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setErrors({});
+  const form = useForm<FormValues>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      role: "DENTIST",
+    },
+  });
 
-    createUser.mutate(newUser, {
+  function onSubmit(values: FormValues) {
+    createUser.mutate(values, {
       onSuccess: () => {
         setOpen(false);
-        setNewUser({ name: "", email: "", password: "", role: "DENTIST" });
+        form.reset();
       },
       onError: (err: unknown) => {
         const e = err as {
@@ -61,11 +65,9 @@ export default function AddStaffModal({ open, setOpen }: AddStaffModalProps) {
           typeof e.data?.error === "object" &&
           e.data.error?.fieldErrors
         ) {
-          const fe: Record<string, string> = {};
-          for (const [k, msgs] of Object.entries(e.data.error.fieldErrors)) {
-            fe[k] = (msgs as string[])[0];
+          for (const [field, msgs] of Object.entries(e.data.error.fieldErrors)) {
+            form.setError(field as keyof FormValues, { message: msgs[0] });
           }
-          setErrors(fe);
         }
         if (typeof e.data?.error === "string") {
           toast.error(e.data.error);
@@ -75,7 +77,13 @@ export default function AddStaffModal({ open, setOpen }: AddStaffModalProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) form.reset();
+      }}
+    >
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus className="w-4 h-4" /> Dodaj
@@ -85,84 +93,89 @@ export default function AddStaffModal({ open, setOpen }: AddStaffModalProps) {
         <DialogHeader>
           <DialogTitle>Dodaj osoblje</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleCreate} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Ime i prezime *</Label>
-            <Input
-              value={newUser.name}
-              onChange={(e) =>
-                setNewUser((u) => ({ ...u, name: e.target.value }))
-              }
-              placeholder="Dr. Ime Prezime"
-            />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label>Email *</Label>
-            <Input
-              type="email"
-              value={newUser.email}
-              onChange={(e) =>
-                setNewUser((u) => ({ ...u, email: e.target.value }))
-              }
-              placeholder="email@dentcare.rs"
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label>Lozinka *</Label>
-            <PasswordInput
-              value={newUser.password}
-              onChange={(e) =>
-                setNewUser((u) => ({ ...u, password: e.target.value }))
-              }
-              placeholder="Min. 6 karaktera"
-            />
-            {errors.password && (
-              <p className="text-xs text-destructive">{errors.password}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label>Uloga</Label>
-            <Select
-              value={newUser.role}
-              onValueChange={(v) =>
-                setNewUser((u) => ({ ...u, role: v as Role }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DENTIST">Stomatolog</SelectItem>
-                <SelectItem value="ASSISTANT">Asistent</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Otkaži
-            </Button>
-            <Button type="submit" disabled={createUser.isPending}>
-              {createUser.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Dodavanje...
-                </>
-              ) : (
-                "Dodaj"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ime i prezime *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Dr. Ime Prezime" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </Button>
-          </DialogFooter>
-        </form>
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email *</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="email@dentcare.rs" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Lozinka *</FormLabel>
+                  <FormControl>
+                    <PasswordInput placeholder="Min. 6 karaktera" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Uloga</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="DENTIST">Stomatolog</SelectItem>
+                      <SelectItem value="ASSISTANT">Asistent</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Otkaži
+              </Button>
+              <Button type="submit" disabled={createUser.isPending}>
+                {createUser.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Dodavanje...
+                  </>
+                ) : (
+                  "Dodaj"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

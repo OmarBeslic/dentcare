@@ -1,27 +1,35 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
 import type { Clinic } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useUpdateClinic } from "@/hooks/useSuperAdminClinics";
+import { createClinicSchema } from "@/lib/validations";
+
+type FormValues = z.infer<typeof createClinicSchema>;
 
 export function ClinicDetailClient({ clinic }: { clinic: Clinic }) {
   const router = useRouter();
-  const [form, setForm] = useState({ name: clinic.name });
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(createClinicSchema),
+    defaultValues: { name: clinic.name },
+  });
 
   const saveDetails = useUpdateClinic(clinic.id);
   const toggleStatus = useUpdateClinic(clinic.id);
 
-  function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    saveDetails.mutate(form, {
+  function onSubmit(values: FormValues) {
+    saveDetails.mutate(values, {
       onSuccess: () => {
         toast.success("Klinika je ažurirana");
         router.refresh();
@@ -60,18 +68,29 @@ export function ClinicDetailClient({ clinic }: { clinic: Clinic }) {
         </Button>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Naziv</Label>
-            <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-          </div>
-          <div className="flex justify-end">
-            <Button type="submit" disabled={saveDetails.isPending}>
-              {saveDetails.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Sačuvaj
-            </Button>
-          </div>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Naziv</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end">
+              <Button type="submit" disabled={saveDetails.isPending}>
+                {saveDetails.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Sačuvaj
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
