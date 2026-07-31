@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { AppRole } from "@/types/next-auth";
+import { prisma } from "./prisma";
 
 // ADMIN can see and manage every clinic's patient/appointment data via the
 // ClinicSwitcher. SUPER_ADMIN is deliberately NOT included — their job is
@@ -25,5 +26,14 @@ export async function getEffectiveClinicId(
 
   const cookieStore = await cookies();
   const selected = cookieStore.get("selectedClinicId")?.value;
-  return selected && selected !== "all" ? selected : null;
+  if (selected && selected !== "all") return selected;
+
+  // No explicit selection (or "all clinics"). If there's genuinely only one
+  // clinic, there's nothing to choose between — auto-resolve to it instead
+  // of leaving effectiveClinicId null (the switcher itself is hidden in this
+  // case, so the cookie could never otherwise get set).
+  const clinics = await prisma.clinic.findMany({ select: { id: true }, take: 2 });
+  if (clinics.length === 1) return clinics[0].id;
+
+  return null;
 }
