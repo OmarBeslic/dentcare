@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "DentCare — Stomatološka Ordinacija",
+  title: "DentCare ",
   description: "Savremena stomatološka njega, briga o vašem osmijehu.",
 };
 
