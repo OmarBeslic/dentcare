@@ -22,10 +22,15 @@ export function PatientDentalSection({ patientId, clinicId }: Props) {
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
-  const { data: chart, isPending: chartPending, isError: chartError } = useToothChart(patientId);
+  const {
+    data: chart,
+    isPending: chartPending,
+    isError: chartError,
+  } = useToothChart(patientId);
   const updateCondition = useUpdateToothCondition(patientId);
 
-  const canAddTreatment = session?.user.role === "ADMIN" || session?.user.role === "DENTIST";
+  const canAddTreatment =
+    session?.user.role === "ADMIN" || session?.user.role === "DENTIST";
 
   function handleToothClick(tooth: number) {
     setSelectedTooth((prev) => (prev === tooth ? null : tooth));
@@ -47,7 +52,9 @@ export function PatientDentalSection({ patientId, clinicId }: Props) {
           {chartPending ? (
             <Skeleton className="h-40 w-full" />
           ) : chartError ? (
-            <p className="text-sm text-destructive py-4 text-center">Greška pri učitavanju zubnog kartona.</p>
+            <p className="text-sm text-destructive py-4 text-center">
+              Greška pri učitavanju zubnog kartona.
+            </p>
           ) : (
             <ToothChart
               patientId={patientId}
@@ -82,14 +89,13 @@ export function PatientDentalSection({ patientId, clinicId }: Props) {
         </CardContent>
       </Card>
 
-      {addOpen && (
-        <TreatmentForm
-          patientId={patientId}
-          clinicId={clinicId}
-          onSuccess={() => setAddOpen(false)}
-          onCancel={() => setAddOpen(false)}
-        />
-      )}
+      <TreatmentForm
+        patientId={patientId}
+        clinicId={clinicId}
+        onSuccess={() => setAddOpen(false)}
+        open={addOpen}
+        onCancel={() => setAddOpen(false)}
+      />
     </>
   );
 }

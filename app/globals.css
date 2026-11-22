@@ -111,3 +111,31 @@ body {
 .no-spinner {
   -moz-appearance: textfield;
 }
+
+.border-debug{
+  border: 1px solid red;
+}
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  padding-right: 2rem; /* room for the icon so text doesn't collide */
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0;
+  margin: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  opacity: 1;
+}
+
+/* iOS also renders the date text itself oddly-spaced */
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin-right: 1.5rem;
+}

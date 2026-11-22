@@ -127,6 +127,7 @@ interface TreatmentFormProps {
   patientId: string;
   clinicId: string;
   record?: ToothRecordDTO;
+  open: boolean;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -134,6 +135,7 @@ interface TreatmentFormProps {
 export function TreatmentForm({
   patientId,
   record,
+  open,
   onSuccess,
   onCancel,
 }: TreatmentFormProps) {
@@ -167,184 +169,176 @@ export function TreatmentForm({
     }
   }
 
-  const body = (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="visitDate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Datum posete *</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="treatedTeeth"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tretirani zubi *</FormLabel>
-              <MiniToothSelector
-                value={field.value}
-                onChange={field.onChange}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="diagnosis"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Dijagnoza</FormLabel>
-              <FormControl>
-                <Textarea rows={3} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="serviceType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Vrsta usluge *</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Izaberite uslugu" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {serviceOptions.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cijena</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      className="pr-8 no-spinner"
-                      {...field}
-                      onChange={(e) => {
-                        const next = e.target.valueAsNumber || 0;
-                        field.onChange(next);
-                        e.target.value = String(next);
-                      }}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      €
-                    </span>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="isPaid"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-lg border border-border p-3 space-y-0">
-              <FormLabel className="mt-0!">Plaćeno</FormLabel>
-              <Switch checked={field.value} onCheckedChange={field.onChange} />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Napomene</FormLabel>
-              <FormControl>
-                <Textarea rows={2} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="w-full sm:w-auto"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Čuvanje...
-              </>
-            ) : (
-              "Sačuvaj tretman"
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            className="w-full sm:w-auto"
-          >
-            Otkaži
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
-
-  const title = isEdit ? "Uredi tretman" : "Dodaj tretman";
-
-  if (isDesktop) {
-    return (
-      <Dialog open onOpenChange={(o) => !o && onCancel()}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-          </DialogHeader>
-          {body}
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
-    <Sheet open onOpenChange={(o) => !o && onCancel()}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        <div className="mt-4">{body}</div>
-      </SheetContent>
-    </Sheet>
+    <Dialog open={open} onOpenChange={onCancel}>
+      <DialogContent
+        className="max-w-lg sm:max-h-[85vh] sm:h-fit h-full rounded-none sm:rounded-lg overflow-y-auto m-0"
+        onPointerDownOutside={(e) => {
+          e.preventDefault();
+        }}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle>
+            {isEdit ? "Uredi tretman" : "Dodaj tretman"}
+          </DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="visitDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Datum posete *</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="treatedTeeth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tretirani zubi *</FormLabel>
+                  <MiniToothSelector
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="diagnosis"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dijagnoza</FormLabel>
+                  <FormControl>
+                    <Textarea rows={3} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="serviceType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vrsta usluge *</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Izaberite uslugu" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {serviceOptions.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cijena</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="pr-8 no-spinner"
+                          {...field}
+                          onChange={(e) => {
+                            const next = e.target.valueAsNumber || 0;
+                            field.onChange(next);
+                            e.target.value = String(next);
+                          }}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          €
+                        </span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="isPaid"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border border-border p-3 space-y-0">
+                  <FormLabel className="mt-0!">Plaćeno</FormLabel>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Napomene</FormLabel>
+                  <FormControl>
+                    <Textarea rows={2} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Čuvanje...
+                  </>
+                ) : (
+                  "Sačuvaj tretman"
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                className="w-full sm:w-auto"
+              >
+                Otkaži
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
