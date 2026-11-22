@@ -20,7 +20,7 @@ export function isGlobalRole(role: AppRole): boolean {
 // clinics, unscoped" and is NOT a safe default for clinical-data routes.
 export async function getEffectiveClinicId(
   role: AppRole,
-  ownClinicId: string | null
+  ownClinicId: string | null,
 ): Promise<string | null> {
   if (!isGlobalRole(role)) return ownClinicId;
 
@@ -32,8 +32,11 @@ export async function getEffectiveClinicId(
   // clinic, there's nothing to choose between — auto-resolve to it instead
   // of leaving effectiveClinicId null (the switcher itself is hidden in this
   // case, so the cookie could never otherwise get set).
-  const clinics = await prisma.clinic.findMany({ select: { id: true }, take: 2 });
+  const clinics = await prisma.clinic.findMany({
+    select: { id: true },
+    where: { isActive: true },
+    take: 2,
+  });
   if (clinics.length === 1) return clinics[0].id;
-
   return null;
 }
